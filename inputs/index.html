@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://pixijs.download/release/pixi.js"></script>
+    </head>
+    <body>
+        <script type="module">
+            const WIDTH = 640;
+            const HEIGHT = 480;
+            const keyMap = {
+                "shift": false,
+                "w": false,
+                "a": false,
+                "s": false,
+                "d": false,
+            };
+            const app = new PIXI.Application();
+            await app.init({width: WIDTH, height: HEIGHT, background: "#333333"});
+
+            const spritesheet = await PIXI.Assets.load("assets/spritesheet.json");
+            const sprite = new PIXI.Sprite(spritesheet.textures['gremlinbase.png']);
+            sprite.scale.x = 0.5;
+            sprite.scale.y = 0.5;
+            sprite.anchor.set(0.5, 0.5);
+            sprite.position.set(200, 200);
+            sprite.interactive = true;
+
+            let isRotating = false;
+            let isRotatingCounterClockWise = false
+            sprite.onclick = ev => { isRotating = true };
+            sprite.onrightclick = ev => { isRotatingCounterClockWise = true };
+            // funny caveat: releasing a combination with shift returns the value of key
+            // as the UPPERCASE key, which does not happen when *pressing* said key
+            // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key#value
+            document.addEventListener("keydown", e => {
+                if (!e.key.toLocaleLowerCase() in keyMap) return
+                keyMap[e.key.toLocaleLowerCase()] = true
+            })
+            document.addEventListener("keyup", e => {
+            console.log(e.key)
+                if (!e.key.toLocaleLowerCase() in keyMap) return
+                keyMap[e.key.toLocaleLowerCase()] = false
+            })
+
+            document.body.appendChild(app.canvas);
+            app.stage.addChild(sprite);
+            
+            // i *think* this ticker method can also be passed to the Application constructor?
+            let elapsed = 0.0;
+            app.ticker.add(ticker => {
+                const speed = keyMap["shift"] ? 2 : 1;
+                if (isRotating) {
+                    sprite.angle += 6 * ticker.deltaTime;
+                    if (sprite.angle >= 360) {
+                        sprite.angle = 0;
+                        isRotating = false;
+                    }
+                }
+                if (isRotatingCounterClockWise) {
+                    sprite.angle -= 6 * ticker.deltaTime
+                    if (sprite.angle <= -360) {
+                        sprite.angle = 0
+                        isRotatingCounterClockWise = false
+                    }
+                }
+                
+                if (keyMap["w"]) {
+                    if ((sprite.position.y) <= Number(sprite.height / 2)) return
+                    sprite.position.y -= 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["a"]) {
+                    if (sprite.position.x <= Number(sprite.width / 2)) return
+                    sprite.position.x -= 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["s"]) {
+                    if (sprite.position.y >= HEIGHT - Number(sprite.height / 2)) return
+                    sprite.position.y += 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["d"]) {
+                    if (sprite.position.x >= WIDTH - Number(sprite.width / 2)) return
+                    sprite.position.x += 5 * speed * ticker.deltaTime
+                }
+            });
+        </script>
+    </body>
+</html>

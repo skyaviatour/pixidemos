@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://pixijs.download/release/pixi.js"></script>
+    </head>
+    <body>
+        <script type="module">
+            function gameLoop(ticker) {
+                const speed = keyMap["shift"] ? 2 : 1;
+                if (isRotating) {
+                    sprite.angle += 6 * ticker.deltaTime;
+                    if (sprite.angle >= 360) {
+                        sprite.angle = 0;
+                        isRotating = false;
+                    }
+                }
+                if (isRotatingCounterClockWise) {
+                    sprite.angle -= 6 * ticker.deltaTime
+                    if (sprite.angle <= -360) {
+                        sprite.angle = 0
+                        isRotatingCounterClockWise = false
+                    }
+                }
+                
+                if (keyMap["w"]) {
+                    if ((sprite.position.y) <= Number(sprite.height / 2)) return
+                    sprite.position.y -= 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["a"]) {
+                    if (sprite.position.x <= Number(sprite.width / 2)) return
+                    sprite.position.x -= 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["s"]) {
+                    if (sprite.position.y >= HEIGHT - Number(sprite.height / 2)) return
+                    sprite.position.y += 5 * speed * ticker.deltaTime
+                }
+                if (keyMap["d"]) {
+                    if (sprite.position.x >= WIDTH - Number(sprite.width / 2)) return
+                    sprite.position.x += 5 * speed * ticker.deltaTime
+                }
+
+            }
+
+            const WIDTH = 640;
+            const HEIGHT = 480;
+            const keyMap = {
+                "shift": false,
+                "w": false,
+                "a": false,
+                "s": false,
+                "d": false,
+            };
+            const app = new PIXI.Application();
+            await app.init({width: WIDTH, height: HEIGHT, background: "#333333"});
+
+            const startScreenContainer = new PIXI.Container()
+            const gameContainer = new PIXI.Container()
+            const pauseContainer = new PIXI.Container()
+            
+            const title = new PIXI.Text({text: "gremgame", style: {fontFamily: "Verdana", fontSize: 20, align: "center", fill: 0xfefefe}})
+            const titleBackground = new PIXI.Graphics().roundRect(0, 0, 150, 50, 4).fill(0xdd0000)
+            const titleContainer = new PIXI.Container()
+            title.position.set(20, 12)
+            titleContainer.pivot.set(75, 25)
+            titleContainer.position.set(WIDTH/2, HEIGHT/8)
+            titleContainer.addChild(titleBackground)
+            titleContainer.addChild(title)
+
+            const buttonLabel = new PIXI.Text({text: "Start", style: {fontFamily: "Verdana", fontSize: 24, fill: 0xfefefe}})
+            const buttonBackground = new PIXI.Graphics().roundRect(0, 0, 80, 40, 8).fill(0xee0000)
+            const buttonContainer = new PIXI.Container()
+            buttonLabel.position.set(9, 6)
+            buttonContainer.pivot.set(40, 20)
+            buttonContainer.position.set(WIDTH/2, (HEIGHT * 3) / 4)
+            buttonContainer.addChild(buttonBackground)
+            buttonContainer.addChild(buttonLabel)
+            buttonContainer.interactive = true
+            buttonContainer.onclick = function(ev) {
+                this.parent.visible = false
+                gameContainer.visible = true
+                app.stage.removeChild(this.parent)
+                app.ticker.add(gameLoop)
+            }
+
+            startScreenContainer.addChild(titleContainer)
+            startScreenContainer.addChild(buttonContainer)
+            
+            const pauseLabel = new PIXI.Text({text: "PAUSE", style: {fontFamily: "Verdana", fontSize: 48, fill: 0xfefefe}})
+            const unpauseButtonContainer = new PIXI.Container()
+            const unpauseButtonLabel = new PIXI.Text({text: "Continue", style: {fontFamily: "Verdana", fontSize: 24, fill: 0xfefefe}})
+            const unpauseButtonBackground = new PIXI.Graphics().roundRect(0, 0, 120, 40, 8).fill(0xee0000)
+            pauseLabel.anchor.set(0.5, 0.5)
+            pauseLabel.position.set(WIDTH / 2, HEIGHT / 6)
+            unpauseButtonLabel.position.set(5, 4)
+            unpauseButtonContainer.pivot.set(60, 20)
+            unpauseButtonContainer.position.set(WIDTH / 2, (HEIGHT * 3) / 4)
+            unpauseButtonContainer.interactive = true
+            unpauseButtonContainer.addChild(unpauseButtonBackground)
+            unpauseButtonContainer.addChild(unpauseButtonLabel)
+            unpauseButtonContainer.onclick = function(ev) {
+                this.parent.visible = false
+                gameContainer.visible = true
+                app.ticker.add(gameLoop)
+            }
+            pauseContainer.addChild(pauseLabel)
+            pauseContainer.addChild(unpauseButtonContainer)
+            
+            const pauseButtonContainer = new PIXI.Container()
+            const pauseButtonBackground = new PIXI.Graphics().roundRect(0, 0, 80, 80, 8).fill(0x2e2e2e)
+            const pauseButtonForeground = new PIXI.Graphics().roundRect(0, 0, 20, 70).fill(0x4e4e4e)
+            pauseButtonForeground.pivot.set(7, 3.5)
+            pauseButtonForeground.position.set(20, 10)
+            const pauseButtonSecondForeground = pauseButtonForeground.clone()
+            pauseButtonSecondForeground.position.set(50, 6)
+            pauseButtonContainer.pivot.set(40, 40)
+            pauseButtonContainer.interactive = true
+            pauseButtonContainer.position.set((WIDTH * 10) / 12, HEIGHT / 10)
+            pauseButtonContainer.addChild(pauseButtonBackground)
+            pauseButtonContainer.addChild(pauseButtonForeground)
+            pauseButtonContainer.addChild(pauseButtonSecondForeground)
+            pauseButtonContainer.onclick = function(ev) {
+                pauseContainer.visible = true
+                console.log("showed pause")
+                this.parent.visible = false
+                console.log("hid game")
+                app.ticker.remove(gameLoop)
+                console.log("paused game")
+            }
+
+            const spritesheet = await PIXI.Assets.load("assets/spritesheet.json");
+            const sprite = new PIXI.Sprite(spritesheet.textures['gremlinbase.png']);
+            sprite.scale.x = 0.5;
+            sprite.scale.y = 0.5;
+            sprite.anchor.set(0.5, 0.5);
+            sprite.position.set(200, 200);
+            sprite.interactive = true;
+
+            let isRotating = false;
+            let isRotatingCounterClockWise = false
+            sprite.onclick = ev => { isRotating = true };
+            sprite.onrightclick = ev => { isRotatingCounterClockWise = true };
+            // funny caveat: releasing a combination with shift returns the value of key
+            // as the UPPERCASE key, which does not happen when *pressing* said key
+            // see: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key#value
+            document.addEventListener("keydown", e => {
+                if (!e.key.toLocaleLowerCase() in keyMap) return
+                keyMap[e.key.toLocaleLowerCase()] = true
+            })
+            document.addEventListener("keyup", e => {
+                if (!e.key.toLocaleLowerCase() in keyMap) return
+                keyMap[e.key.toLocaleLowerCase()] = false
+            })
+
+            gameContainer.addChild(sprite)
+            gameContainer.addChild(pauseButtonContainer)
+            document.body.appendChild(app.canvas);
+            app.stage.addChild(startScreenContainer)
+            app.stage.addChild(pauseContainer)
+            app.stage.addChild(gameContainer);
+            gameContainer.visible = false
+            pauseContainer.visible = false
+        </script>
+    </body>
+</html>

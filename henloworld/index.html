@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://pixijs.download/release/pixi.js"></script>
+    </head>
+    <body>
+        <h1>abobaa</h1>
+        <script type="module">
+            // a canvas can also be created manually and passed to the Application constructor
+            const app = new PIXI.Application();
+            await app.init({width: 640, height: 480});
+
+            // this is fine for a trivial load, but Assets#load also supports (and encourages)
+            // using spritesheets instead. which then can be taken by Sprite#from
+            // see: https://pixijs.download/release/docs/assets.Spritesheet.html
+            await PIXI.Assets.load("sample.png");
+            const sprite = PIXI.Sprite.from("sample.png");
+
+            document.body.appendChild(app.canvas);
+            app.stage.addChild(sprite);
+            
+            // i *think* this ticker method can also be passed to the Application constructor?
+            let elapsed = 0.0;
+            app.ticker.add(ticker => {
+                elapsed += ticker.deltaTime;
+                
+                sprite.x = 100.0 + Math.sin(elapsed / 50.0) * 100.0;
+            });
+        </script>
+    </body>
+</html>
